@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>批量注册测试用户</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    #log {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    .success {
+      color: #4CAF50;
+    }
+    .error {
+      color: #f44336;
+    }
+    .info {
+      color: #2196F3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>批量注册测试用户</h1>
+    <p>将创建 10 个测试用户：</p>
+    <ul>
+      <li>邮箱：user1@test.com 到 user10@test.com</li>
+      <li>密码：88888888</li>
+      <li>姓名：测试用户1 到 测试用户10</li>
+    </ul>
+    <button id="createBtn" onclick="createUsers()">开始创建用户</button>
+    <div id="log"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://ajvhylnsfizvjkfsmxwi.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqdmh5bG5zZml6dmprZnNteHdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNjY1MTcsImV4cCI6MjA3NTk0MjUxN30.c3hiDQnBSTlr--z4G9_RvaJJgORi8mCw27vyqRDqoTY'
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    function log(message, type = 'info') {
+      const logDiv = document.getElementById('log')
+      const p = document.createElement('p')
+      p.className = type
+      p.textContent = message
+      logDiv.appendChild(p)
+      logDiv.scrollTop = logDiv.scrollHeight
+    }
+
+    async function createUsers() {
+      const btn = document.getElementById('createBtn')
+      btn.disabled = true
+      btn.textContent = '创建中...'
+
+      document.getElementById('log').innerHTML = ''
+      log('开始批量创建用户...', 'info')
+
+      for (let i = 1; i <= 10; i++) {
+        const email = `user${i}@test.com`
+        const password = '88888888'
+        const fullName = `测试用户${i}`
+
+        try {
+          log(`正在创建用户 ${i}/10: ${email}`, 'info')
+
+          const { data, error } = await supabase.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+              data: {
+                full_name: fullName
+              }
+            }
+          })
+
+          if (error) {
+            if (error.message.includes('already registered')) {
+              log(`⚠️  用户 ${email} 已存在`, 'error')
+            } else {
+              log(`❌ 创建 ${email} 失败: ${error.message}`, 'error')
+            }
+            continue
+          }
+
+          if (data.user) {
+            log(`✓ 成功创建: ${email}`, 'success')
+
+            // 创建用户资料
+            const { error: profileError } = await supabase
+              .from('user_profiles')
+              .insert([{
+                id: data.user.id,
+                full_name: fullName,
+                email: email,
+                phone: `1380000${i.toString().padStart(4, '0')}`,
+                membership_level: 'standard'
+              }])
+
+            if (profileError) {
+              log(`  ⚠️  创建用户资料失败: ${profileError.message}`, 'error')
+            } else {
+              log(`  ✓ 用户资料已创建`, 'success')
+            }
+
+            // 登出当前用户，准备注册下一个
+            await supabase.auth.signOut()
+          }
+
+          // 延迟一下，避免请求过快
+          await new Promise(resolve => setTimeout(resolve, 500))
+
+        } catch (err) {
+          log(`❌ 创建用户时发生错误: ${err.message}`, 'error')
+        }
+      }
+
+      log('\n✓ 批量创建完成！', 'success')
+      log('用户名: user1@test.com 到 user10@test.com', 'info')
+      log('密码: 88888888', 'info')
+
+      btn.disabled = false
+      btn.textContent = '重新创建用户'
+    }
+  </script>
+</body>
+</html>

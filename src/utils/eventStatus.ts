@@ -1,0 +1,84 @@
+/**
+ * 根据时间自动判断活动状态
+ * @param event 活动对象
+ * @returns 活动状态
+ */
+export function getEventStatus(event: any): 'upcoming' | 'active' | 'completed' | 'cancelled' {
+  // 如果活动被手动取消，直接返回取消状态
+  if (event.status === 'cancelled') {
+    return 'cancelled'
+  }
+
+  const now = new Date()
+  const startTime = new Date(event.start_time)
+  const endTime = new Date(event.end_time)
+
+  // 活动还未开始
+  if (now < startTime) {
+    return 'upcoming'
+  }
+
+  // 活动已结束
+  if (now > endTime) {
+    return 'completed'
+  }
+
+  // 活动进行中
+  return 'active'
+}
+
+/**
+ * 获取活动状态的中文显示文本
+ * @param status 活动状态
+ * @returns 中文状态文本
+ */
+export function getEventStatusText(status: 'upcoming' | 'active' | 'completed' | 'cancelled'): string {
+  const statusMap = {
+    upcoming: '未开始',
+    active: '进行中',
+    completed: '已完成',
+    cancelled: '已取消'
+  }
+  return statusMap[status]
+}
+
+/**
+ * 获取活动状态的样式类名
+ * @param status 活动状态
+ * @returns 样式类名
+ */
+export function getEventStatusStyles(status: 'upcoming' | 'active' | 'completed' | 'cancelled'): string {
+  const styleMap = {
+    upcoming: 'bg-blue-100 text-blue-700',
+    active: 'bg-green-100 text-green-700',
+    completed: 'bg-gray-100 text-gray-700',
+    cancelled: 'bg-red-100 text-red-700'
+  }
+  return styleMap[status]
+}
+
+/**
+ * 检查活动是否可以录入成绩
+ * @param event 活动对象
+ * @returns 是否可以录入成绩
+ */
+export function canEnterScores(event: any): boolean {
+  const status = getEventStatus(event)
+  return status === 'active' || status === 'completed'
+}
+
+/**
+ * 检查活动是否可以报名
+ * @param event 活动对象
+ * @returns 是否可以报名
+ */
+export function canRegister(event: any): boolean {
+  const status = getEventStatus(event)
+  const now = new Date()
+  const registrationDeadline = new Date(event.registration_deadline)
+  
+  return status === 'upcoming' && now < registrationDeadline
+}
+
+
+
