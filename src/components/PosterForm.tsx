@@ -78,13 +78,13 @@ export default function PosterForm({ poster, onClose, onSuccess }: PosterFormPro
     const filePath = fileName
 
     const { error: uploadError } = await supabase.storage
-      .from('poster-images')
+      .from('golf-club-images')
       .upload(filePath, file)
 
     if (uploadError) throw uploadError
 
     const { data: { publicUrl } } = supabase.storage
-      .from('poster-images')
+      .from('golf-club-images')
       .getPublicUrl(filePath)
 
     return publicUrl
@@ -251,6 +251,7 @@ export default function PosterForm({ poster, onClose, onSuccess }: PosterFormPro
                     type="number"
                     value={formData.display_order}
                     onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
+                    onWheel={(e) => e.currentTarget.blur()}
                     className="input-field"
                     placeholder="0"
                   />

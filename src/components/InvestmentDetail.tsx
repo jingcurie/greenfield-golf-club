@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { X, Heart, DollarSign, Calendar, Users, Upload, TrendingUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useModal } from './ModalProvider'
-import Toast from './Toast'
 
 interface InvestmentProject {
   id: string
@@ -31,7 +30,6 @@ export default function InvestmentDetail({ project, onClose, user }: InvestmentD
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const { showError, showSuccess } = useModal()
-  const [showToast, setShowToast] = useState(false)
 
   const progress = Math.min((project.current_amount / project.target_amount) * 100, 100)
   const daysLeft = Math.ceil((new Date(project.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
@@ -74,14 +72,14 @@ export default function InvestmentDetail({ project, onClose, user }: InvestmentD
         const filePath = `investment-proofs/${fileName}`
 
         const { error: uploadError } = await supabase.storage
-          .from('poster-images')
-          .upload(filePath, paymentProof)
+          .from('golf-club-images')
+          .upload(`investments/${filePath}`, paymentProof)
 
         if (uploadError) throw uploadError
 
         const { data: { publicUrl } } = supabase.storage
-          .from('poster-images')
-          .getPublicUrl(filePath)
+          .from('golf-club-images')
+          .getPublicUrl(`investments/${filePath}`)
 
         paymentProofUrl = publicUrl
       }
@@ -99,14 +97,14 @@ export default function InvestmentDetail({ project, onClose, user }: InvestmentD
 
       if (error) throw error
 
-      setShowToast(true)
+      // 使用 success 提示
+      showSuccess('感谢您的支持，我们会尽快确认您的投资。', '投资提交成功！')
+      
       setAmount('')
       setNotes('')
       setPaymentProof(null)
       setPreviewUrl(null)
-      setTimeout(() => {
-        onClose()
-      }, 2000)
+      onClose()
     } catch (error) {
       console.error('提交投资失败:', error)
       showError('提交失败，请重试')
@@ -150,6 +148,7 @@ export default function InvestmentDetail({ project, onClose, user }: InvestmentD
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
                 min="1"
                 step="0.01"
                 required
@@ -247,14 +246,6 @@ export default function InvestmentDetail({ project, onClose, user }: InvestmentD
       </div>
     </div>
 
-    {showToast && (
-      <Toast
-        message="投资提交成功！感谢您的支持，我们会尽快确认您的投资"
-        type="success"
-        duration={3000}
-        onClose={() => setShowToast(false)}
-      />
-    )}
     </>
   )
 }

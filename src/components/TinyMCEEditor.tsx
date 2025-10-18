@@ -6,6 +6,7 @@ interface TinyMCEEditorProps {
   onChange: (value: string) => void;
   placeholder?: string;
   height?: number;
+  editorId?: string;
 }
 
 export default function TinyMCEEditor({
@@ -13,8 +14,9 @@ export default function TinyMCEEditor({
   onChange,
   placeholder = "请输入内容...",
   height = 300,
+  editorId: propEditorId,
 }: TinyMCEEditorProps) {
-  const editorId = useRef(`editor-${Math.random().toString(36).substr(2, 9)}`);
+  const editorId = useRef(propEditorId || `editor-${Math.random().toString(36).substr(2, 9)}`);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -133,7 +135,17 @@ export default function TinyMCEEditor({
           },
           setup: (editor: any) => {
             editor.on('init', () => {
-              editor.setContent(content);
+              console.log('TinyMCE 初始化，设置内容:', content);
+              console.log('TinyMCE 初始化，内容长度:', content?.length);
+              
+              // 强制设置 LTR 方向
+              editor.getBody().style.direction = 'ltr';
+              editor.getBody().style.textAlign = 'left';
+              
+              if (content) {
+                editor.setContent(content);
+                console.log('初始化后编辑器内容:', editor.getContent());
+              }
             });
             editor.on('change keyup', () => {
               onChange(editor.getContent());
@@ -152,11 +164,31 @@ export default function TinyMCEEditor({
     };
   }, []);
 
+  // 监听 content 变化，更新编辑器内容
   useEffect(() => {
-    if (window.tinymce && initialized.current) {
+    if (window.tinymce) {
       const editor = window.tinymce.get(editorId.current);
-      if (editor && editor.getContent() !== content) {
-        editor.setContent(content);
+      if (editor && editor.getContent) {
+        const currentContent = editor.getContent();
+        // 只有当内容真正不同时才更新，避免无限循环
+        if (currentContent !== content) {
+          console.log('TinyMCE 更新内容:', content);
+          console.log('TinyMCE 当前编辑器内容:', currentContent);
+          editor.setContent(content);
+          console.log('设置后编辑器内容:', editor.getContent());
+        }
+      } else {
+        console.log('TinyMCE 编辑器未找到或未初始化');
+        // 如果编辑器还没初始化，延迟重试
+        if (content) {
+          setTimeout(() => {
+            const retryEditor = window.tinymce.get(editorId.current);
+            if (retryEditor && retryEditor.getContent) {
+              console.log('TinyMCE 延迟设置内容:', content);
+              retryEditor.setContent(content);
+            }
+          }, 1000);
+        }
       }
     }
   }, [content]);

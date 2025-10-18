@@ -23,7 +23,6 @@ export default function EventReviews() {
       const { data, error } = await supabase
         .from('events')
         .select('*')
-        .eq('status', 'completed')
         .eq('article_published', true)
         .order('article_published_at', { ascending: false })
 

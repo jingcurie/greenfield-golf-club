@@ -93,14 +93,14 @@ export default function EventForm({ event, onClose, onSuccess }: EventFormProps)
           const filePath = `investment-proofs/${fileName}`
 
           const { error: uploadError } = await supabase.storage
-            .from('poster-images')
-            .upload(filePath, qrCodeFile)
+            .from('golf-club-images')
+            .upload(`events/${filePath}`, qrCodeFile)
 
           if (uploadError) throw uploadError
 
           const { data: { publicUrl } } = supabase.storage
-            .from('poster-images')
-            .getPublicUrl(filePath)
+            .from('golf-club-images')
+            .getPublicUrl(`events/${filePath}`)
 
           paymentQrCodeUrl = publicUrl
         }

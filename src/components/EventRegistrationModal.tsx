@@ -21,6 +21,7 @@ export default function EventRegistrationModal({ event, user, onClose, onSuccess
   const [paymentProof, setPaymentProof] = useState<File | null>(null)
   const [paymentProofPreview, setPaymentProofPreview] = useState<string | null>(null)
 
+
   useEffect(() => {
     if (user) {
       fetchUserProfile()
@@ -149,8 +150,8 @@ export default function EventRegistrationModal({ event, user, onClose, onSuccess
           const filePath = `payment-proofs/${fileName}`
           
           const { error: uploadError } = await supabase.storage
-            .from('poster-images')
-            .upload(filePath, paymentProof)
+            .from('golf-club-images')
+            .upload(`payment-proofs/${filePath}`, paymentProof)
           
           if (uploadError) {
             console.error('上传支付证明失败:', uploadError)
@@ -158,8 +159,8 @@ export default function EventRegistrationModal({ event, user, onClose, onSuccess
           }
           
           const { data: { publicUrl } } = supabase.storage
-            .from('poster-images')
-            .getPublicUrl(filePath)
+            .from('golf-club-images')
+            .getPublicUrl(`payment-proofs/${filePath}`)
           
           paymentProofUrl = publicUrl
           console.log('支付证明上传成功:', paymentProofUrl)

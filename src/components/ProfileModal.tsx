@@ -20,6 +20,7 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
   
   // 编辑表单状态
   const [editForm, setEditForm] = useState({
@@ -205,15 +206,15 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
       const filePath = `avatars/${fileName}`
 
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, selectedFile)
+        .from('golf-club-images')
+        .upload(`avatars/${filePath}`, selectedFile)
 
       if (uploadError) throw uploadError
 
       // 获取公开URL
       const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath)
+        .from('golf-club-images')
+        .getPublicUrl(`avatars/${filePath}`)
 
       // 更新用户资料，保存裁剪设置
       const { error: updateError } = await supabase
@@ -470,6 +471,7 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
                             max="54"
                             value={editForm.handicap}
                             onChange={(e) => setEditForm({ ...editForm, handicap: e.target.value })}
+                            onWheel={(e) => e.currentTarget.blur()}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-golf-500 focus:border-transparent"
                             placeholder="18.5"
                           />

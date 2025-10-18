@@ -31,6 +31,7 @@ export default function EventDetail({ event, onClose, user, userProfile }: Event
   const [articlePublishedAt, setArticlePublishedAt] = useState(event.article_published_at || '')
   const { confirmAction, showError } = useModal()
 
+
   useEffect(() => {
     fetchEventData()
   }, [event.id, user])
@@ -352,7 +353,7 @@ export default function EventDetail({ event, onClose, user, userProfile }: Event
               )}
 
               {/* 活动精彩文章 */}
-              {userProfile?.role === 'admin' && event.status === 'completed' && (
+              {userProfile?.role === 'admin' && getEventStatus(event) === 'completed' && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-semibold text-gray-900 flex items-center">
@@ -392,6 +393,8 @@ export default function EventDetail({ event, onClose, user, userProfile }: Event
                           content={articleContent}
                           onChange={setArticleContent}
                           placeholder="请写下活动的精彩回顾..."
+                          editorId="event-article-editor"
+                          height={500}
                         />
                       </div>
                       <div className="flex items-center space-x-3">

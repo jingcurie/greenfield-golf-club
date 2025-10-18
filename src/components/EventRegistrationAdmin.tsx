@@ -21,6 +21,7 @@ const EventRegistrationAdmin: React.FC<EventRegistrationAdminProps> = ({
   const [approvalNotes, setApprovalNotes] = useState('')
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [showBatchApprovalModal, setShowBatchApprovalModal] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const { showSuccess, showError } = useModal()
 
   useEffect(() => {
@@ -75,21 +76,34 @@ const EventRegistrationAdmin: React.FC<EventRegistrationAdminProps> = ({
   const handleApproval = async (registrationId: string, approved: boolean) => {
     setProcessingId(registrationId)
     try {
-      const { error } = await supabase
-        .from('event_registrations')
-        .update({
-          approval_status: approved ? 'approved' : 'rejected',
-          approval_time: new Date().toISOString(),
-          approved_by: (await supabase.auth.getUser()).data.user?.id,
-          approval_notes: approvalNotes || (approved ? '审批通过' : '审批拒绝'),
-          payment_status: approved ? 'paid' : 'pending'
-        })
-        .eq('id', registrationId)
+      if (approved) {
+        // 批准：更新状态
+        const { error } = await supabase
+          .from('event_registrations')
+          .update({
+            approval_status: 'approved',
+            approval_time: new Date().toISOString(),
+            approved_by: (await supabase.auth.getUser()).data.user?.id,
+            approval_notes: approvalNotes || '审批通过',
+            payment_status: 'paid'
+          })
+          .eq('id', registrationId)
 
-      if (error) throw error
+        if (error) throw error
+        showSuccess('报名申请已批准')
+      } else {
+        // 取消：删除报名记录
+        const { error } = await supabase
+          .from('event_registrations')
+          .delete()
+          .eq('id', registrationId)
 
-      showSuccess(approved ? '报名申请已批准' : '报名申请已拒绝')
+        if (error) throw error
+        showSuccess('报名申请已取消，用户可以重新报名')
+      }
+
       setApprovalNotes('')
+      setSelectedRegistration(null) // 关闭详情模态框
       fetchRegistrations()
       
       // 通知父组件数据已更新
@@ -97,16 +111,15 @@ const EventRegistrationAdmin: React.FC<EventRegistrationAdminProps> = ({
         onDataChange()
       }
     } catch (error) {
-      console.error('审批失败:', error)
-      showError('审批失败')
+      console.error('操作失败:', error)
+      showError(approved ? '批准失败' : '取消失败')
     } finally {
       setProcessingId(null)
     }
   }
 
   const handleBatchApproval = async () => {
-    const pendingRegistrations = registrations.filter(reg => reg.approval_status === 'pending')
-    if (pendingRegistrations.length === 0) return
+    if (selectedIds.length === 0) return
 
     setProcessingId('batch')
     try {
@@ -119,12 +132,13 @@ const EventRegistrationAdmin: React.FC<EventRegistrationAdminProps> = ({
           approval_notes: '批量审批通过',
           payment_status: 'paid'
         })
-        .in('id', pendingRegistrations.map(reg => reg.id))
+        .in('id', selectedIds)
 
       if (error) throw error
 
-      showSuccess(`已批量批准 ${pendingRegistrations.length} 个报名申请`)
+      showSuccess(`已批量批准 ${selectedIds.length} 个报名申请`)
       setShowBatchApprovalModal(false)
+      setSelectedIds([])
       fetchRegistrations()
       
       // 通知父组件数据已更新
@@ -137,6 +151,23 @@ const EventRegistrationAdmin: React.FC<EventRegistrationAdminProps> = ({
     } finally {
       setProcessingId(null)
     }
+  }
+
+  const handleSelectAll = () => {
+    const pendingRegistrations = registrations.filter(reg => reg.approval_status === 'pending')
+    if (selectedIds.length === pendingRegistrations.length) {
+      setSelectedIds([])
+    } else {
+      setSelectedIds(pendingRegistrations.map(reg => reg.id))
+    }
+  }
+
+  const handleSelectRegistration = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) 
+        ? prev.filter(selectedId => selectedId !== id)
+        : [...prev, id]
+    )
   }
 
   const getStatusInfo = (registration: EventRegistration) => {
@@ -205,11 +236,11 @@ const EventRegistrationAdmin: React.FC<EventRegistrationAdminProps> = ({
             return pendingCount > 0 ? (
               <button
                 onClick={() => setShowBatchApprovalModal(true)}
-                disabled={processingId === 'batch'}
+                disabled={processingId === 'batch' || selectedIds.length === 0}
                 className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
               >
                 <Check className="w-4 h-4 mr-2" />
-                {processingId === 'batch' ? '处理中...' : `批量通过 (${pendingCount})`}
+                {processingId === 'batch' ? '处理中...' : `批量通过 (${selectedIds.length})`}
               </button>
             ) : null
           })()}
@@ -225,6 +256,31 @@ const EventRegistrationAdmin: React.FC<EventRegistrationAdminProps> = ({
         </div>
       ) : (
         <div className="space-y-4">
+          {/* 表头 - 全选功能 */}
+          {(() => {
+            const pendingCount = registrations.filter(reg => reg.approval_status === 'pending').length
+            return pendingCount > 0 ? (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.length === pendingCount && pendingCount > 0}
+                      onChange={handleSelectAll}
+                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      {selectedIds.length === pendingCount ? '取消全选' : '全选'} 待审批报名 ({pendingCount} 个)
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    已选择 {selectedIds.length} 个
+                  </div>
+                </div>
+              </div>
+            ) : null
+          })()}
+          
           {registrations.map((registration) => {
             const statusInfo = getStatusInfo(registration)
             const StatusIcon = statusInfo.icon
@@ -233,6 +289,16 @@ const EventRegistrationAdmin: React.FC<EventRegistrationAdminProps> = ({
               <div key={registration.id} className="bg-white border border-gray-200 rounded-lg p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-3 flex-1">
+                    {registration.approval_status === 'pending' && (
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(registration.id)}
+                          onChange={() => handleSelectRegistration(registration.id)}
+                          className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                        />
+                      </div>
+                    )}
                     <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-3">
                       <StatusIcon className={`w-5 h-5 ${statusInfo.iconColor}`} />
@@ -295,7 +361,7 @@ const EventRegistrationAdmin: React.FC<EventRegistrationAdminProps> = ({
                           className="flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm transition-colors disabled:opacity-50"
                         >
                           <X className="w-4 h-4 mr-1" />
-                          {processingId === registration.id ? '处理中...' : '拒绝'}
+                          {processingId === registration.id ? '处理中...' : '取消'}
                         </button>
                       </>
                     )}
@@ -382,6 +448,45 @@ const EventRegistrationAdmin: React.FC<EventRegistrationAdminProps> = ({
                     <p className="text-sm text-green-800">{selectedRegistration.approval_notes}</p>
                   </div>
                 )}
+
+                {/* 审批操作区域 */}
+                {selectedRegistration.approval_status === 'pending' && (
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-yellow-900 mb-3">审批操作</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          审批备注 (可选)
+                        </label>
+                        <textarea
+                          value={approvalNotes}
+                          onChange={(e) => setApprovalNotes(e.target.value)}
+                          placeholder="请输入审批备注..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                          rows={3}
+                        />
+                      </div>
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={() => handleApproval(selectedRegistration.id, true)}
+                          disabled={processingId === selectedRegistration.id}
+                          className="flex-1 flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+                        >
+                          <Check className="w-4 h-4 mr-2" />
+                          {processingId === selectedRegistration.id ? '处理中...' : '批准'}
+                        </button>
+                        <button
+                          onClick={() => handleApproval(selectedRegistration.id, false)}
+                          disabled={processingId === selectedRegistration.id}
+                          className="flex-1 flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          {processingId === selectedRegistration.id ? '处理中...' : '取消'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -417,7 +522,8 @@ const EventRegistrationAdmin: React.FC<EventRegistrationAdminProps> = ({
                 </div>
                 
                 <div className="text-sm text-gray-600">
-                  确定要批量批准所有待审批的报名申请吗？
+                  确定要批量批准选中的 {selectedIds.length} 个报名申请吗？<br/>
+                  <span className="text-red-600 font-medium">注意：批量操作只能批准，不能取消报名。</span>
                 </div>
               </div>
               

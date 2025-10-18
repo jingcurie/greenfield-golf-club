@@ -1,30 +1,42 @@
 /**
- * 根据时间自动判断活动状态
+ * 根据时间和存储状态计算显示状态
+ * 
+ * 设计理念：
+ * - 数据库只存储两种状态：active（正常活动）和 cancelled（管理员取消）
+ * - 显示状态完全基于时间计算：未开始/进行中/已完成
+ * - 只有 cancelled 状态是管理员手动控制的
+ * 
  * @param event 活动对象
- * @returns 活动状态
+ * @returns 显示状态
  */
 export function getEventStatus(event: any): 'upcoming' | 'active' | 'completed' | 'cancelled' {
-  // 如果活动被手动取消，直接返回取消状态
+  // 先判断数据库存储状态
   if (event.status === 'cancelled') {
-    return 'cancelled'
+    return 'cancelled'  // 活动取消
+  }
+  
+  // 如果是 active 状态，则根据时间计算显示状态
+  if (event.status === 'active') {
+    const now = new Date()
+    const startTime = new Date(event.start_time)
+    const endTime = new Date(event.end_time)
+
+    // 活动还未开始
+    if (now < startTime) {
+      return 'upcoming'  // 未开始
+    }
+
+    // 活动已结束
+    if (now > endTime) {
+      return 'completed'  // 活动结束
+    }
+
+    // 活动进行中
+    return 'active'  // 进行中
   }
 
-  const now = new Date()
-  const startTime = new Date(event.start_time)
-  const endTime = new Date(event.end_time)
-
-  // 活动还未开始
-  if (now < startTime) {
-    return 'upcoming'
-  }
-
-  // 活动已结束
-  if (now > endTime) {
-    return 'completed'
-  }
-
-  // 活动进行中
-  return 'active'
+  // 默认情况（兼容旧数据）
+  return 'upcoming'
 }
 
 /**

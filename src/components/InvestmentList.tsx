@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { Heart, TrendingUp, Calendar, DollarSign, ChevronRight, List } from 'lucide-react'
+import { Heart, TrendingUp, Calendar, DollarSign, ChevronRight, List, RefreshCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import MyInvestments from './MyInvestments'
+import { useAuth } from '../hooks/useAuth'
 
 interface InvestmentProject {
   id: string
@@ -24,14 +25,26 @@ interface InvestmentListProps {
 }
 
 export default function InvestmentList({ onProjectSelect, userId }: InvestmentListProps) {
+  const { user } = useAuth()
   const [projects, setProjects] = useState<InvestmentProject[]>([])
   const [investments, setInvestments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [activeTab, setActiveTab] = useState<'all' | 'my'>('all')
 
   useEffect(() => {
     fetchProjects()
     fetchInvestments()
+  }, [])
+
+  // 添加定期刷新机制，确保数据一致性
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchProjects()
+      fetchInvestments()
+    }, 30000) // 每30秒刷新一次
+
+    return () => clearInterval(interval)
   }, [])
 
   const fetchProjects = async () => {
@@ -51,14 +64,61 @@ export default function InvestmentList({ onProjectSelect, userId }: InvestmentLi
     }
   }
 
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      await Promise.all([fetchProjects(), fetchInvestments()])
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   const fetchInvestments = async () => {
     try {
+      console.log('开始获取投资记录...')
+      console.log('当前用户ID:', user?.id)
+      console.log('用户邮箱:', user?.email)
+      
+      // 直接获取所有已确认的投资记录，用于计算项目筹款进度
+      // 这个查询应该返回所有用户的已确认投资记录
       const { data, error } = await supabase
         .from('investments')
         .select('*')
         .eq('status', 'confirmed')
 
-      if (error) throw error
+      if (error) {
+        console.error('获取已确认投资记录错误:', error)
+        console.error('错误详情:', error)
+        throw error
+      }
+      
+      console.log('获取到的已确认投资记录数量:', data?.length || 0)
+      console.log('已确认投资记录详情:', data)
+      
+      // 如果获取不到数据，尝试不同的查询方式
+      if (!data || data.length === 0) {
+        console.log('尝试获取所有投资记录...')
+        const { data: allData, error: allError } = await supabase
+          .from('investments')
+          .select('*')
+        
+        if (allError) {
+          console.error('获取所有投资记录错误:', allError)
+        } else {
+          console.log('所有投资记录数量:', allData?.length || 0)
+          console.log('所有投资记录详情:', allData)
+          
+          if (allData && allData.length > 0) {
+            console.log('投资记录状态分布:')
+            const statusCount = allData.reduce((acc, inv) => {
+              acc[inv.status] = (acc[inv.status] || 0) + 1
+              return acc
+            }, {})
+            console.log(statusCount)
+          }
+        }
+      }
+      
       setInvestments(data || [])
     } catch (error) {
       console.error('获取投资记录失败:', error)
@@ -71,9 +131,11 @@ export default function InvestmentList({ onProjectSelect, userId }: InvestmentLi
 
   // 计算项目的实际已筹集金额
   const calculateProjectAmount = (projectId: string) => {
-    return investments
-      .filter(inv => inv.project_id === projectId && inv.status === 'confirmed')
-      .reduce((sum, inv) => sum + inv.amount, 0)
+    const projectInvestments = investments.filter(inv => inv.project_id === projectId && inv.status === 'confirmed')
+    const totalAmount = projectInvestments.reduce((sum, inv) => sum + inv.amount, 0)
+    console.log(`项目 ${projectId} 的投资记录:`, projectInvestments)
+    console.log(`项目 ${projectId} 已筹集金额:`, totalAmount)
+    return totalAmount
   }
 
   const formatAmount = (amount: number) => {
@@ -95,26 +157,37 @@ export default function InvestmentList({ onProjectSelect, userId }: InvestmentLi
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 p-1 inline-flex">
+      <div className="flex items-center justify-between">
+        <div className="bg-white rounded-xl border border-gray-200 p-1 inline-flex">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-6 py-2 rounded-lg font-medium text-sm transition-colors ${
+              activeTab === 'all'
+                ? 'bg-green-600 text-white'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            所有项目
+          </button>
+          <button
+            onClick={() => setActiveTab('my')}
+            className={`px-6 py-2 rounded-lg font-medium text-sm transition-colors ${
+              activeTab === 'my'
+                ? 'bg-green-600 text-white'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            我的投资
+          </button>
+        </div>
+        
         <button
-          onClick={() => setActiveTab('all')}
-          className={`px-6 py-2 rounded-lg font-medium text-sm transition-colors ${
-            activeTab === 'all'
-              ? 'bg-green-600 text-white'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          所有项目
-        </button>
-        <button
-          onClick={() => setActiveTab('my')}
-          className={`px-6 py-2 rounded-lg font-medium text-sm transition-colors ${
-            activeTab === 'my'
-              ? 'bg-green-600 text-white'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          我的投资
+          <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? '刷新中...' : '刷新数据'}
         </button>
       </div>
 

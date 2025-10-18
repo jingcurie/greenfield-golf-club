@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { X, Calendar, MapPin, DollarSign, Users, FileText, Image as ImageIcon, Upload } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Event } from '../types'
+import TinyMCEEditor from './TinyMCEEditor'
+import { getEventStatus, getEventStatusText, getEventStatusStyles } from '../utils/eventStatus'
 
 interface EventFormProps {
   event?: Event | null
@@ -13,14 +15,15 @@ export default function EventForm({ event, onClose, onSuccess }: EventFormProps)
   const [qrCodeFile, setQrCodeFile] = useState<File | null>(null)
   const [qrCodePreview, setQrCodePreview] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const isInitializing = useRef(true)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     start_time: '',
     end_time: '',
     location: '',
-    fee: 0,
-    max_participants: 50,
+    fee: 0 as number | string,
+    max_participants: 50 as number | string,
     registration_deadline: '',
     rules: '',
     image_url: '',
@@ -30,11 +33,13 @@ export default function EventForm({ event, onClose, onSuccess }: EventFormProps)
     status: 'upcoming'
   })
 
+
   // 初始化表单数据
   useEffect(() => {
     if (event) {
       // 编辑模式 - 填充现有数据
       console.log('编辑事件数据:', event)
+      isInitializing.current = true
       
       // 格式化日期为 datetime-local 格式
       const formatDateTime = (dateString: string) => {
@@ -55,16 +60,27 @@ export default function EventForm({ event, onClose, onSuccess }: EventFormProps)
         start_time: formatDateTime(event.start_time),
         end_time: formatDateTime(event.end_time),
         location: event.location || '',
-        fee: event.fee || 0,
-        max_participants: event.max_participants || 50,
+        fee: event.fee ? event.fee.toString() : '',
+        max_participants: event.max_participants ? event.max_participants.toString() : '50',
         registration_deadline: formatDateTime(event.registration_deadline),
         rules: event.rules || '',
         image_url: event.image_url || '',
         payment_qr_code: event.payment_qr_code || '',
         payment_emt_email: event.payment_emt_email || '',
         payment_instructions: event.payment_instructions || '',
-        status: event.status || 'upcoming'
+        status: event.status || 'active'
       })
+      
+      console.log('EventForm 设置表单数据，description:', event.description);
+  console.log('EventForm 设置表单数据，description 长度:', event.description?.length);
+  console.log('EventForm 设置表单数据，description 前100字符:', event.description?.substring(0, 100));
+      
+      // 延迟设置初始化完成标志
+      setTimeout(() => {
+        isInitializing.current = false
+      }, 500)
+      
+      // 移除强制更新，避免与 onChange 循环冲突
       
       // 如果有现有的二维码，设置预览
       if (event.payment_qr_code) {
@@ -72,6 +88,7 @@ export default function EventForm({ event, onClose, onSuccess }: EventFormProps)
       }
     } else {
       // 创建模式 - 重置为默认值
+      isInitializing.current = true
       setFormData({
         title: '',
         description: '',
@@ -89,6 +106,11 @@ export default function EventForm({ event, onClose, onSuccess }: EventFormProps)
         status: 'upcoming'
       })
       setQrCodePreview('')
+      
+      // 延迟设置初始化完成标志
+      setTimeout(() => {
+        isInitializing.current = false
+      }, 500)
     }
   }, [event])
 
@@ -119,8 +141,8 @@ export default function EventForm({ event, onClose, onSuccess }: EventFormProps)
         const fileName = `qr-codes/${Date.now()}.${fileExt}`
         
         const { error: uploadError } = await supabase.storage
-          .from('poster-images')
-          .upload(fileName, qrCodeFile)
+          .from('golf-club-images')
+          .upload(`events/${fileName}`, qrCodeFile)
 
         if (uploadError) {
           console.error('上传二维码失败:', uploadError)
@@ -128,28 +150,31 @@ export default function EventForm({ event, onClose, onSuccess }: EventFormProps)
         }
 
         const { data: { publicUrl } } = supabase.storage
-          .from('poster-images')
-          .getPublicUrl(fileName)
+          .from('golf-club-images')
+          .getPublicUrl(`events/${fileName}`)
 
         qrCodeUrl = publicUrl
       }
 
       // 准备事件数据
+      console.log('提交时的 formData.description:', formData.description);
+      console.log('提交时的 formData.description 长度:', formData.description?.length);
+      
       const eventData = {
         title: formData.title,
         description: formData.description,
         start_time: formData.start_time ? new Date(formData.start_time + ':00').toISOString() : null,
         end_time: formData.end_time ? new Date(formData.end_time + ':00').toISOString() : null,
         location: formData.location,
-        fee: formData.fee,
-        max_participants: formData.max_participants,
+        fee: typeof formData.fee === 'string' ? parseFloat(formData.fee) || 0 : formData.fee,
+        max_participants: typeof formData.max_participants === 'string' ? parseInt(formData.max_participants) || 50 : formData.max_participants,
         registration_deadline: formData.registration_deadline ? new Date(formData.registration_deadline + ':00').toISOString() : null,
         rules: formData.rules,
         image_url: formData.image_url,
         payment_qr_code: qrCodeUrl,
         payment_emt_email: formData.payment_emt_email,
         payment_instructions: formData.payment_instructions,
-        status: formData.status
+        status: formData.status === 'cancelled' ? 'cancelled' : 'active'
       }
 
 
@@ -239,13 +264,21 @@ export default function EventForm({ event, onClose, onSuccess }: EventFormProps)
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   活动描述
                 </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="input-field"
-                  rows={8}
-                  placeholder="请输入活动描述..."
-                />
+                <div className="border border-gray-300 rounded-lg">
+                  <TinyMCEEditor
+                    content={formData.description}
+                    onChange={(content) => {
+                      console.log('TinyMCE onChange:', content);
+                      setFormData(prevData => ({ ...prevData, description: content }))
+                    }}
+                    placeholder="请输入活动描述..."
+                    editorId="event-description-editor"
+                    height={400}
+                  />
+                  <div style={{marginTop: '10px', padding: '10px', background: '#f0f0f0', fontSize: '12px'}}>
+                    调试信息: {formData.description ? `内容长度: ${formData.description.length}` : '无内容'}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -310,11 +343,16 @@ export default function EventForm({ event, onClose, onSuccess }: EventFormProps)
                   报名费用 *
                 </label>
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.fee === 0 ? '' : formData.fee}
-                  onChange={(e) => setFormData({ ...formData, fee: parseFloat(e.target.value) || 0 })}
+                  type="text"
+                  value={formData.fee}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      // 只允许数字和小数点，允许以小数点结尾（输入过程中的中间状态）
+                      if (/^[0-9]*\.?[0-9]*$/.test(value) || value === '' || value.endsWith('.')) {
+                        setFormData({ ...formData, fee: value })
+                      }
+                    }}
+                  onWheel={(e) => e.currentTarget.blur()}
                   className="input-field"
                   placeholder="0.00"
                   required
@@ -330,8 +368,12 @@ export default function EventForm({ event, onClose, onSuccess }: EventFormProps)
                 <input
                   type="number"
                   min="1"
-                  value={formData.max_participants === 50 ? '' : formData.max_participants}
-                  onChange={(e) => setFormData({ ...formData, max_participants: parseInt(e.target.value) || 50 })}
+                  value={formData.max_participants}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setFormData({ ...formData, max_participants: value === '' ? '' : parseInt(value) || '' })
+                  }}
+                  onWheel={(e) => e.currentTarget.blur()}
                   className="input-field"
                   placeholder="50"
                   required
@@ -400,9 +442,7 @@ export default function EventForm({ event, onClose, onSuccess }: EventFormProps)
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   className="input-field"
                 >
-                  <option value="upcoming">未开始</option>
-                  <option value="active">进行中</option>
-                  <option value="completed">已完成</option>
+                  <option value="active">正常活动</option>
                   <option value="cancelled">已取消</option>
                 </select>
               </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, Trophy, Image, Heart, LogOut, User, Menu, X, Settings, ChevronDown, ArrowRight, Receipt } from 'lucide-react'
+import { Calendar, Trophy, Image, Heart, LogOut, User, Menu, X, Settings, ChevronDown, ArrowRight, Receipt, BookOpen } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import ProfileModal from './ProfileModal'
@@ -51,7 +51,7 @@ interface InvestmentProject {
   title: string
   description: string
   target_amount: number
-  current_amount: number
+  current_amount: number | null
   payment_method: string | null
   payment_qrcode_url: string | null
   emt_email: string | null
@@ -311,7 +311,7 @@ export default function Dashboard() {
                     : 'text-gray-700 hover:text-golf-600'
                 }`}
               >
-                活动回顾
+                精彩回顾
               </button>
               <button
                 onClick={() => setCurrentView('scores')}
@@ -698,7 +698,7 @@ export default function Dashboard() {
             {/* Quick Actions */}
             <div className="mb-4 sm:mb-6 lg:mb-8">
               <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 lg:mb-6">快捷操作</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
                 <div 
                   onClick={() => setCurrentView('events')}
                   className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
@@ -711,6 +711,20 @@ export default function Dashboard() {
                     <ArrowRight className="w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </h4>
                   <p className="text-gray-600 text-xs sm:text-sm hidden sm:block">查看并报名参加俱乐部活动</p>
+                </div>
+
+                <div
+                  onClick={() => setCurrentView('reviews')}
+                  className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
+                >
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 bg-orange-500 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-3 lg:mb-4">
+                    <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-white" />
+                  </div>
+                  <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 mb-1 sm:mb-2 flex items-center">
+                    精彩回顾
+                    <ArrowRight className="w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </h4>
+                  <p className="text-gray-600 text-xs sm:text-sm hidden sm:block">浏览活动精彩回顾文章</p>
                 </div>
 
                 <div
@@ -938,10 +952,10 @@ export default function Dashboard() {
                         </div>
                         <div className="text-right">
                           <div className="text-sm font-bold text-red-600">
-                            ¥{investment.current_amount.toLocaleString()}
+                            ¥{(investment.current_amount || 0).toLocaleString()}
                           </div>
                           <div className="text-xs text-gray-600">
-                            {Math.round((investment.current_amount / investment.target_amount) * 100)}%
+                            {Math.round(((investment.current_amount || 0) / investment.target_amount) * 100)}%
                           </div>
                         </div>
                       </div>

@@ -8,7 +8,7 @@ export interface ImageUploadResult {
 
 export const uploadImageToSupabase = async (
   file: File,
-  bucketName: string = 'poster-images',
+  bucketName: string = 'golf-club-images',
   folderPath: string = 'articles'
 ): Promise<ImageUploadResult> => {
   try {

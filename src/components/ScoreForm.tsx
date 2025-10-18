@@ -521,6 +521,7 @@ export default function ScoreForm({ onClose, onSuccess, preselectedEvent, presel
                           type="number"
                           value={scoreData.total_strokes}
                           onChange={(e) => setScoreData({ ...scoreData, total_strokes: e.target.value })}
+                          onWheel={(e) => e.currentTarget.blur()}
                           className="input-field"
                           min="1"
                           max="200"
@@ -538,6 +539,7 @@ export default function ScoreForm({ onClose, onSuccess, preselectedEvent, presel
                           type="number"
                           value={scoreData.net_strokes}
                           onChange={(e) => setScoreData({ ...scoreData, net_strokes: e.target.value })}
+                          onWheel={(e) => e.currentTarget.blur()}
                           className="input-field"
                           min="1"
                           max="200"
@@ -557,6 +559,7 @@ export default function ScoreForm({ onClose, onSuccess, preselectedEvent, presel
                           type="number"
                           value={scoreData.handicap}
                           onChange={(e) => setScoreData({ ...scoreData, handicap: e.target.value })}
+                          onWheel={(e) => e.currentTarget.blur()}
                           className="input-field"
                           min="0"
                           max="54"
@@ -573,6 +576,7 @@ export default function ScoreForm({ onClose, onSuccess, preselectedEvent, presel
                           type="number"
                           value={scoreData.rank}
                           onChange={(e) => setScoreData({ ...scoreData, rank: e.target.value })}
+                          onWheel={(e) => e.currentTarget.blur()}
                           className="input-field"
                           min="1"
                           max="1000"

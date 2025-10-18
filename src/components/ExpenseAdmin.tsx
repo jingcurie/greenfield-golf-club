@@ -180,8 +180,8 @@ export default function ExpenseAdmin() {
         console.log('上传路径:', filePath)
 
         const { data, error: uploadError } = await supabase.storage
-          .from('expenses')
-          .upload(filePath, file)
+          .from('golf-club-images')
+          .upload(`expenses/${filePath}`, file)
 
         if (uploadError) {
           console.error(`上传 ${file.name} 失败:`, uploadError)
@@ -192,8 +192,8 @@ export default function ExpenseAdmin() {
         console.log('上传成功:', data)
 
         const { data: { publicUrl } } = supabase.storage
-          .from('expenses')
-          .getPublicUrl(filePath)
+          .from('golf-club-images')
+          .getPublicUrl(`expenses/${filePath}`)
 
         console.log('公开URL:', publicUrl)
 
@@ -398,18 +398,18 @@ export default function ExpenseAdmin() {
                       金额 (CAD) *
                     </label>
                     <input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                      type="text"
                       value={formData.amount}
                       onChange={(e) => {
-                        console.log('金额输入变化:', e.target.value)
-                        setFormData({ ...formData, amount: e.target.value })
+                        const value = e.target.value
+                        // 只允许数字和小数点
+                        if (/^[0-9]*\.?[0-9]*$/.test(value) || value === '') {
+                          setFormData({ ...formData, amount: value })
+                        }
                       }}
-                      onFocus={(e) => console.log('金额输入框获得焦点')}
-                      onBlur={(e) => console.log('金额输入框失去焦点')}
+                      onWheel={(e) => e.currentTarget.blur()}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="请输入金额"
+                      placeholder="请输入金额，如：123.45"
                       required
                     />
                   </div>

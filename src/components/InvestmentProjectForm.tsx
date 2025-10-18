@@ -87,14 +87,14 @@ export default function InvestmentProjectForm({ project, onClose, onSuccess }: I
         const filePath = `investment-qrcodes/${fileName}`
 
         const { error: uploadError } = await supabase.storage
-          .from('poster-images')
-          .upload(filePath, qrcodeFile)
+          .from('golf-club-images')
+          .upload(`investments/${filePath}`, qrcodeFile)
 
         if (uploadError) throw uploadError
 
         const { data: { publicUrl } } = supabase.storage
-          .from('poster-images')
-          .getPublicUrl(filePath)
+          .from('golf-club-images')
+          .getPublicUrl(`investments/${filePath}`)
 
         qrcodeUrl = publicUrl
       }
@@ -188,12 +188,17 @@ export default function InvestmentProjectForm({ project, onClose, onSuccess }: I
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
-                  type="number"
+                  type="text"
                   value={formData.target_amount}
-                  onChange={(e) => setFormData({ ...formData, target_amount: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    // 只允许数字和小数点
+                    if (/^[0-9]*\.?[0-9]*$/.test(value) || value === '') {
+                      setFormData({ ...formData, target_amount: value })
+                    }
+                  }}
+                  onWheel={(e) => e.currentTarget.blur()}
                   required
-                  min="0"
-                  step="0.01"
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="100000"
                 />
@@ -210,6 +215,7 @@ export default function InvestmentProjectForm({ project, onClose, onSuccess }: I
                   type="number"
                   value={formData.current_amount}
                   onChange={(e) => setFormData({ ...formData, current_amount: e.target.value })}
+                  onWheel={(e) => e.currentTarget.blur()}
                   min="0"
                   step="0.01"
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
