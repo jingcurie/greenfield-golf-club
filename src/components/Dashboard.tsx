@@ -304,6 +304,16 @@ export default function Dashboard() {
                 活动报名
               </button>
               <button
+                onClick={() => setCurrentView('reviews')}
+                className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
+                  currentView === 'reviews'
+                    ? 'bg-golf-600 text-white'
+                    : 'text-gray-700 hover:text-golf-600'
+                }`}
+              >
+                活动回顾
+              </button>
+              <button
                 onClick={() => setCurrentView('scores')}
                 className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
                   currentView === 'scores'
@@ -505,6 +515,19 @@ export default function Dashboard() {
                   }`}
                 >
                   活动报名
+                </button>
+                <button
+                  onClick={() => {
+                    setCurrentView('reviews')
+                    setMobileMenuOpen(false)
+                  }}
+                  className={`px-3 py-2 rounded-lg font-medium text-sm text-left transition-colors ${
+                    currentView === 'reviews'
+                      ? 'bg-golf-600 text-white'
+                      : 'text-gray-700 hover:text-golf-600'
+                  }`}
+                >
+                  活动回顾
                 </button>
                 <button
                   onClick={() => {
@@ -1082,11 +1105,7 @@ export default function Dashboard() {
               <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">活动报名</h2>
               <p className="text-gray-600">参加俱乐部精彩活动，与球友们一起享受高尔夫乐趣</p>
             </div>
-            <EventList 
-              onEventSelect={setSelectedEvent} 
-              user={user} 
-              onShowReviews={() => setCurrentView('reviews')}
-            />
+            <EventList onEventSelect={setSelectedEvent} user={user} />
           </div>
         ) : currentView === 'posters' ? (
           <div className="space-y-6">
