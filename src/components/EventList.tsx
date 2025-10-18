@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, MapPin, Users, Clock, DollarSign, ChevronRight, CheckCircle, AlertCircle } from 'lucide-react'
+import { Calendar, MapPin, Users, Clock, DollarSign, ChevronRight, CheckCircle, AlertCircle, FileText } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { getEventStatus, getEventStatusText, getEventStatusStyles, canRegister } from '../utils/eventStatus'
 import { Event, EventStats } from '../types'
@@ -8,9 +8,10 @@ import UnifiedSearch from './UnifiedSearch'
 interface EventListProps {
   onEventSelect: (event: Event) => void
   user?: any
+  onShowReviews?: () => void
 }
 
-export default function EventList({ onEventSelect, user }: EventListProps) {
+export default function EventList({ onEventSelect, user, onShowReviews }: EventListProps) {
   const [events, setEvents] = useState<Event[]>([])
   const [eventStats, setEventStats] = useState<Record<string, EventStats>>({})
   const [userRegistrations, setUserRegistrations] = useState<Record<string, any>>({})
@@ -205,6 +206,30 @@ export default function EventList({ onEventSelect, user }: EventListProps) {
 
   return (
     <div className="space-y-6">
+      {/* 活动回顾入口 */}
+      {onShowReviews && (
+        <div className="bg-gradient-to-r from-golf-50 to-golf-100 rounded-2xl p-6 border border-golf-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-golf-600 rounded-full flex items-center justify-center">
+                <FileText className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">活动精彩回顾</h3>
+                <p className="text-sm text-gray-600">查看往期活动的精彩瞬间和回顾文章</p>
+              </div>
+            </div>
+            <button
+              onClick={onShowReviews}
+              className="px-4 py-2 bg-golf-600 text-white rounded-lg hover:bg-golf-700 transition-colors flex items-center space-x-2"
+            >
+              <FileText className="w-4 h-4" />
+              <span>查看回顾</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 统一搜索组件 */}
       <UnifiedSearch
         searchTerm={searchTerm}
