@@ -76,7 +76,8 @@ export default function EventDetail({ event, onClose, user, userProfile }: Event
         .update({
           article_content: articleContent,
           article_excerpt: articleExcerpt,
-          article_author_id: user?.id
+          article_author_id: user?.id,
+          updated_at: new Date().toISOString()
         })
         .eq('id', event.id)
 
@@ -114,7 +115,8 @@ export default function EventDetail({ event, onClose, user, userProfile }: Event
           article_excerpt: articleExcerpt,
           article_published: true,
           article_published_at: new Date().toISOString(),
-          article_author_id: user?.id
+          article_author_id: user?.id,
+          updated_at: new Date().toISOString()
         })
         .eq('id', event.id)
 
