@@ -9,6 +9,7 @@ import EventRegistrationModal from './EventRegistrationModal'
 import TinyMCEViewer from './TinyMCEViewer'
 import TinyMCEEditor from './TinyMCEEditor'
 import { useModal } from './ModalProvider'
+import { getEventStatus } from '../utils/eventStatus'
 
 interface EventDetailProps {
   event: Event
@@ -339,7 +340,7 @@ export default function EventDetail({ event, onClose, user, userProfile }: Event
               )}
 
               {/* 活动精彩文章 */}
-              {userProfile?.role === 'admin' && event.status === 'completed' && (
+              {userProfile?.role === 'admin' && getEventStatus(event) === 'completed' && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-semibold text-gray-900 flex items-center">
