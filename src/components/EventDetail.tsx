@@ -14,9 +14,10 @@ interface EventDetailProps {
   event: Event
   onClose: () => void
   user: any
+  userProfile?: any
 }
 
-export default function EventDetail({ event, onClose, user }: EventDetailProps) {
+export default function EventDetail({ event, onClose, user, userProfile }: EventDetailProps) {
   const [stats, setStats] = useState<EventStats | null>(null)
   const [userRegistration, setUserRegistration] = useState<EventRegistration | null>(null)
   const [showRegistrationModal, setShowRegistrationModal] = useState(false)
@@ -316,7 +317,7 @@ export default function EventDetail({ event, onClose, user }: EventDetailProps) 
               )}
 
               {/* 活动精彩文章 */}
-              {user?.role === 'admin' && event.status === 'completed' && (
+              {userProfile?.role === 'admin' && event.status === 'completed' && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-semibold text-gray-900 flex items-center">

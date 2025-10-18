@@ -1155,6 +1155,7 @@ export default function Dashboard() {
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
           user={user}
+          userProfile={userProfile}
         />
       )}
 
