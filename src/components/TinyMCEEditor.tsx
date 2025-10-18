@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { uploadImageToSupabase, validateImageFile } from "../utils/imageUpload";
 
 interface TinyMCEEditorProps {
   content: string;
@@ -107,6 +108,29 @@ export default function TinyMCEEditor({
               `
             }
           ],
+          images_upload_handler: async (blobInfo: any, progress: any) => {
+            try {
+              // 验证文件
+              const file = blobInfo.blob() as File
+              validateImageFile(file)
+              
+              // 显示上传进度
+              progress(0)
+              
+              // 上传到 Supabase
+              const result = await uploadImageToSupabase(file, 'event-images', 'articles-images')
+              
+              if (result.success && result.url) {
+                progress(100)
+                return result.url
+              } else {
+                throw new Error(result.error || '上传失败')
+              }
+            } catch (error) {
+              console.error('图片上传失败:', error)
+              throw error
+            }
+          },
           setup: (editor: any) => {
             editor.on('init', () => {
               editor.setContent(content);
