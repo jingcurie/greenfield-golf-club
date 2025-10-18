@@ -1,6 +1,12 @@
 -- 设置文章图片存储
 -- 确保 event-images bucket 存在并配置正确的权限
 
+-- 删除现有策略（如果存在）
+DROP POLICY IF EXISTS "允许认证用户上传文章图片" ON storage.objects;
+DROP POLICY IF EXISTS "允许所有人查看文章图片" ON storage.objects;
+DROP POLICY IF EXISTS "允许用户更新自己的文章图片" ON storage.objects;
+DROP POLICY IF EXISTS "允许用户删除自己的文章图片" ON storage.objects;
+
 -- 创建 bucket（如果不存在）
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
@@ -15,7 +21,7 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = 5242880,
   allowed_mime_types = ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
--- 设置存储策略 - 允许认证用户上传图片
+-- 设置存储策略 - 允许认证用户上传图片到 articles-images 目录
 CREATE POLICY "允许认证用户上传文章图片" ON storage.objects
 FOR INSERT WITH CHECK (
   bucket_id = 'event-images' 
@@ -23,11 +29,11 @@ FOR INSERT WITH CHECK (
   AND (storage.foldername(name))[1] = 'articles-images'
 );
 
--- 设置存储策略 - 允许所有人查看图片
+-- 设置存储策略 - 允许所有人查看 event-images 中的图片
 CREATE POLICY "允许所有人查看文章图片" ON storage.objects
 FOR SELECT USING (bucket_id = 'event-images');
 
--- 设置存储策略 - 允许认证用户更新自己的图片
+-- 设置存储策略 - 允许认证用户更新 articles-images 目录中的图片
 CREATE POLICY "允许用户更新自己的文章图片" ON storage.objects
 FOR UPDATE USING (
   bucket_id = 'event-images' 
@@ -35,7 +41,7 @@ FOR UPDATE USING (
   AND (storage.foldername(name))[1] = 'articles-images'
 );
 
--- 设置存储策略 - 允许认证用户删除自己的图片
+-- 设置存储策略 - 允许认证用户删除 articles-images 目录中的图片
 CREATE POLICY "允许用户删除自己的文章图片" ON storage.objects
 FOR DELETE USING (
   bucket_id = 'event-images' 
