@@ -50,6 +50,13 @@ export interface Event {
   payment_instructions?: string
   status: 'active' | 'cancelled' | 'completed'
   created_at: string
+  // 文章相关字段
+  article_content?: string
+  article_published?: boolean
+  article_published_at?: string
+  article_author_id?: string
+  article_excerpt?: string
+  article_featured_image_url?: string
 }
 
 export interface EventRegistration {

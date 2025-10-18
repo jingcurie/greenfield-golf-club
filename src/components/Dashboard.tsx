@@ -14,6 +14,7 @@ import UserScoreQuery from './UserScoreQuery'
 import InvestmentList from './InvestmentList'
 import InvestmentDetail from './InvestmentDetail'
 import ExpenseList from './ExpenseList'
+import EventReviews from './EventReviews'
 import AdminAnalytics from './AdminAnalytics'
 import { Event } from '../types'
 
@@ -66,7 +67,7 @@ export default function Dashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [profileModalOpen, setProfileModalOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const [currentView, setCurrentView] = useState<'dashboard' | 'events' | 'posters' | 'scores' | 'investments' | 'expenses' | 'admin'>('dashboard')
+  const [currentView, setCurrentView] = useState<'dashboard' | 'events' | 'posters' | 'scores' | 'investments' | 'expenses' | 'reviews' | 'admin'>('dashboard')
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [selectedPoster, setSelectedPoster] = useState<Poster | null>(null)
   const [selectedScore, setSelectedScore] = useState<Score | null>(null)
@@ -323,6 +324,16 @@ export default function Dashboard() {
                 海报展示
               </button>
               <button
+                onClick={() => setCurrentView('reviews')}
+                className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
+                  currentView === 'reviews'
+                    ? 'bg-golf-600 text-white'
+                    : 'text-gray-700 hover:text-golf-600'
+                }`}
+              >
+                活动回顾
+              </button>
+              <button
                 onClick={() => setCurrentView('investments')}
                 className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
                   currentView === 'investments'
@@ -530,6 +541,19 @@ export default function Dashboard() {
                   }`}
                 >
                   海报展示
+                </button>
+                <button
+                  onClick={() => {
+                    setCurrentView('reviews')
+                    setMobileMenuOpen(false)
+                  }}
+                  className={`px-3 py-2 rounded-lg font-medium text-sm text-left transition-colors ${
+                    currentView === 'reviews'
+                      ? 'bg-golf-600 text-white'
+                      : 'text-gray-700 hover:text-golf-600'
+                  }`}
+                >
+                  活动回顾
                 </button>
                 <button
                   onClick={() => {
@@ -1108,6 +1132,10 @@ export default function Dashboard() {
               <p className="text-gray-600">俱乐部财务透明，费用支出公开</p>
             </div>
             <ExpenseList />
+          </div>
+        ) : currentView === 'reviews' ? (
+          <div className="space-y-6">
+            <EventReviews />
           </div>
         ) : currentView === 'admin' && isAdmin ? (
           <AdminPanel />

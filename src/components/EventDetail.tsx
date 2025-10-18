@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { 
   X, Calendar, MapPin, Users, Clock, DollarSign, 
-  FileText, AlertCircle, CheckCircle, ArrowLeft 
+  FileText, AlertCircle, CheckCircle, ArrowLeft, Edit3, Save, Eye
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Event, EventStats, EventRegistration } from '../types'
 import EventRegistrationModal from './EventRegistrationModal'
 import TinyMCEViewer from './TinyMCEViewer'
+import TinyMCEEditor from './TinyMCEEditor'
 import { useModal } from './ModalProvider'
 
 interface EventDetailProps {
@@ -20,6 +21,10 @@ export default function EventDetail({ event, onClose, user }: EventDetailProps) 
   const [userRegistration, setUserRegistration] = useState<EventRegistration | null>(null)
   const [showRegistrationModal, setShowRegistrationModal] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [isEditingArticle, setIsEditingArticle] = useState(false)
+  const [articleContent, setArticleContent] = useState(event.article_content || '')
+  const [articleExcerpt, setArticleExcerpt] = useState(event.article_excerpt || '')
+  const [savingArticle, setSavingArticle] = useState(false)
   const { confirmAction, showError } = useModal()
 
   useEffect(() => {
@@ -51,6 +56,60 @@ export default function EventDetail({ event, onClose, user }: EventDetailProps) 
       console.error('获取活动数据失败:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSaveArticle = async () => {
+    try {
+      setSavingArticle(true)
+      
+      const { error } = await supabase
+        .from('events')
+        .update({
+          article_content: articleContent,
+          article_excerpt: articleExcerpt,
+          article_author_id: user?.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', event.id)
+
+      if (error) throw error
+
+      setIsEditingArticle(false)
+      showError('文章保存成功！')
+    } catch (error) {
+      console.error('保存文章失败:', error)
+      showError('保存文章失败，请重试')
+    } finally {
+      setSavingArticle(false)
+    }
+  }
+
+  const handlePublishArticle = async () => {
+    try {
+      setSavingArticle(true)
+      
+      const { error } = await supabase
+        .from('events')
+        .update({
+          article_content: articleContent,
+          article_excerpt: articleExcerpt,
+          article_published: true,
+          article_published_at: new Date().toISOString(),
+          article_author_id: user?.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', event.id)
+
+      if (error) throw error
+
+      setIsEditingArticle(false)
+      showError('文章发布成功！')
+    } catch (error) {
+      console.error('发布文章失败:', error)
+      showError('发布文章失败，请重试')
+    } finally {
+      setSavingArticle(false)
     }
   }
 
@@ -253,6 +312,98 @@ export default function EventDetail({ event, onClose, user }: EventDetailProps) 
                   <div className="bg-gray-50 rounded-lg p-6">
                     <TinyMCEViewer content={event.rules} />
                   </div>
+                </div>
+              )}
+
+              {/* 活动精彩文章 */}
+              {user?.role === 'admin' && event.status === 'completed' && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                      <FileText className="w-5 h-5 mr-2 text-golf-600" />
+                      活动精彩回顾
+                    </h3>
+                    {!isEditingArticle && (
+                      <button
+                        onClick={() => setIsEditingArticle(true)}
+                        className="flex items-center px-3 py-2 bg-golf-600 text-white rounded-lg hover:bg-golf-700 transition-colors"
+                      >
+                        <Edit3 className="w-4 h-4 mr-2" />
+                        {event.article_content ? '编辑文章' : '写精彩回顾'}
+                      </button>
+                    )}
+                  </div>
+
+                  {isEditingArticle ? (
+                    <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          文章摘要
+                        </label>
+                        <textarea
+                          value={articleExcerpt}
+                          onChange={(e) => setArticleExcerpt(e.target.value)}
+                          placeholder="请输入文章摘要，用于列表展示..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-golf-500 focus:border-golf-500"
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          文章内容
+                        </label>
+                        <TinyMCEEditor
+                          content={articleContent}
+                          onChange={setArticleContent}
+                          placeholder="请写下活动的精彩回顾..."
+                        />
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={handleSaveArticle}
+                          disabled={savingArticle}
+                          className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          {savingArticle ? '保存中...' : '保存草稿'}
+                        </button>
+                        <button
+                          onClick={handlePublishArticle}
+                          disabled={savingArticle}
+                          className="flex items-center px-4 py-2 bg-golf-600 text-white rounded-lg hover:bg-golf-700 disabled:opacity-50 transition-colors"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          {savingArticle ? '发布中...' : '发布文章'}
+                        </button>
+                        <button
+                          onClick={() => setIsEditingArticle(false)}
+                          className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                        >
+                          取消
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg p-6">
+                      {event.article_content ? (
+                        <div>
+                          <TinyMCEViewer content={event.article_content} />
+                          {event.article_published && (
+                            <div className="mt-4 text-sm text-green-600 flex items-center">
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              已发布 - {new Date(event.article_published_at || '').toLocaleDateString('zh-CN')}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-gray-500 text-center py-8">
+                          <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                          <p>还没有写活动回顾</p>
+                          <p className="text-sm">点击上方按钮开始写精彩回顾</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
