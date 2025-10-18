@@ -64,23 +64,33 @@ export default function EventDetail({ event, onClose, user, userProfile }: Event
     try {
       setSavingArticle(true)
       
+      console.log('开始保存文章...', {
+        eventId: event.id,
+        articleContent: articleContent?.substring(0, 100) + '...',
+        articleExcerpt: articleExcerpt,
+        userId: user?.id
+      })
+      
       const { error } = await supabase
         .from('events')
         .update({
           article_content: articleContent,
           article_excerpt: articleExcerpt,
-          article_author_id: user?.id,
-          updated_at: new Date().toISOString()
+          article_author_id: user?.id
         })
         .eq('id', event.id)
 
-      if (error) throw error
+      if (error) {
+        console.error('数据库更新错误:', error)
+        throw error
+      }
 
+      console.log('文章保存成功')
       setIsEditingArticle(false)
       showError('文章保存成功！')
     } catch (error) {
       console.error('保存文章失败:', error)
-      showError('保存文章失败，请重试')
+      showError(`保存文章失败: ${error.message || '请重试'}`)
     } finally {
       setSavingArticle(false)
     }
@@ -90,6 +100,13 @@ export default function EventDetail({ event, onClose, user, userProfile }: Event
     try {
       setSavingArticle(true)
       
+      console.log('开始发布文章...', {
+        eventId: event.id,
+        articleContent: articleContent?.substring(0, 100) + '...',
+        articleExcerpt: articleExcerpt,
+        userId: user?.id
+      })
+      
       const { error } = await supabase
         .from('events')
         .update({
@@ -97,18 +114,21 @@ export default function EventDetail({ event, onClose, user, userProfile }: Event
           article_excerpt: articleExcerpt,
           article_published: true,
           article_published_at: new Date().toISOString(),
-          article_author_id: user?.id,
-          updated_at: new Date().toISOString()
+          article_author_id: user?.id
         })
         .eq('id', event.id)
 
-      if (error) throw error
+      if (error) {
+        console.error('数据库更新错误:', error)
+        throw error
+      }
 
+      console.log('文章发布成功')
       setIsEditingArticle(false)
       showError('文章发布成功！')
     } catch (error) {
       console.error('发布文章失败:', error)
-      showError('发布文章失败，请重试')
+      showError(`发布文章失败: ${error.message || '请重试'}`)
     } finally {
       setSavingArticle(false)
     }
