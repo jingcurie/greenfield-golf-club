@@ -390,9 +390,6 @@ export default function UserScoreQuery() {
                                 </div>
                               )}
                             </div>
-                            <div className="text-right">
-                              <span className="text-gray-500">{group.scores.length}人参赛</span>
-                            </div>
                           </div>
                         </div>
 
