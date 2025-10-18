@@ -8,8 +8,8 @@ export interface ImageUploadResult {
 
 export const uploadImageToSupabase = async (
   file: File,
-  bucketName: string = 'event-images',
-  folderPath: string = 'articles-images'
+  bucketName: string = 'poster-images',
+  folderPath: string = 'articles'
 ): Promise<ImageUploadResult> => {
   try {
     // 生成唯一文件名
