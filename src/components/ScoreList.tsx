@@ -234,68 +234,115 @@ export default function ScoreList({ userId, onScoreSelect }: ScoreListProps) {
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {filteredScores.map((score) => (
           <div
             key={score.id}
             onClick={() => onScoreSelect(score)}
-            className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer p-6"
+            className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer p-3 sm:p-6"
           >
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                      {score.competition_name}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-                      <span className="inline-flex items-center px-2 py-1 bg-blue-50 text-blue-700 rounded-lg">
-                        {getCompetitionTypeText(score.competition_type)}
-                      </span>
-                      <span className="inline-flex items-center">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        {formatDate(score.competition_date)}
-                      </span>
-                      <span className="inline-flex items-center">
-                        <MapPin className="w-4 h-4 mr-1" />
-                        {score.course_name}
-                      </span>
-                    </div>
+            {/* 移动端紧凑布局 */}
+            <div className="block sm:hidden">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-base font-semibold text-gray-900 truncate flex-1 mr-2">
+                  {score.competition_name}
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <div className="text-right">
+                    <div className="text-xl font-bold text-golf-600">{score.total_strokes}杆</div>
+                    {score.rank && (
+                      <div className="flex items-center justify-end mt-1">
+                        <Trophy className={`w-4 h-4 mr-1 ${
+                          score.rank === 1 ? 'text-yellow-500' :
+                          score.rank === 2 ? 'text-gray-400' :
+                          score.rank === 3 ? 'text-orange-600' :
+                          'text-gray-300'
+                        }`} />
+                        <span className="text-sm font-bold text-gray-900">
+                          #{score.rank}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
+              
+              <div className="flex items-center justify-between text-xs text-gray-600">
+                <div className="flex items-center space-x-3">
+                  <span className="inline-flex items-center px-2 py-1 bg-blue-50 text-blue-700 rounded">
+                    {getCompetitionTypeText(score.competition_type)}
+                  </span>
+                  <span className="inline-flex items-center">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    {formatDate(score.competition_date)}
+                  </span>
+                </div>
+                <div className="text-right">
+                  {score.total_participants && (
+                    <span className="text-gray-500">{score.total_participants}人参赛</span>
+                  )}
+                </div>
+              </div>
+            </div>
 
-              <div className="flex items-center gap-6">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-golf-600">{score.total_strokes}</div>
-                  <div className="text-xs text-gray-500 mt-1">总杆数</div>
+            {/* 桌面端完整布局 */}
+            <div className="hidden sm:block">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        {score.competition_name}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                        <span className="inline-flex items-center px-2 py-1 bg-blue-50 text-blue-700 rounded-lg">
+                          {getCompetitionTypeText(score.competition_type)}
+                        </span>
+                        <span className="inline-flex items-center">
+                          <Calendar className="w-4 h-4 mr-1" />
+                          {formatDate(score.competition_date)}
+                        </span>
+                        <span className="inline-flex items-center">
+                          <MapPin className="w-4 h-4 mr-1" />
+                          {score.course_name}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {score.net_strokes && (
+                <div className="flex items-center gap-6">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{score.net_strokes}</div>
-                    <div className="text-xs text-gray-500 mt-1">净杆数</div>
+                    <div className="text-3xl font-bold text-golf-600">{score.total_strokes}</div>
+                    <div className="text-xs text-gray-500 mt-1">总杆数</div>
                   </div>
-                )}
 
-                {score.rank && (
-                  <div className="text-center">
-                    <div className="flex items-center">
-                      <Trophy className={`w-6 h-6 mr-1 ${
-                        score.rank === 1 ? 'text-yellow-500' :
-                        score.rank === 2 ? 'text-gray-400' :
-                        score.rank === 3 ? 'text-orange-600' :
-                        'text-gray-300'
-                      }`} />
-                      <span className="text-2xl font-bold text-gray-900">
-                        #{score.rank}
-                      </span>
+                  {score.net_strokes && (
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">{score.net_strokes}</div>
+                      <div className="text-xs text-gray-500 mt-1">净杆数</div>
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {score.total_participants && `共${score.total_participants}人`}
+                  )}
+
+                  {score.rank && (
+                    <div className="text-center">
+                      <div className="flex items-center">
+                        <Trophy className={`w-6 h-6 mr-1 ${
+                          score.rank === 1 ? 'text-yellow-500' :
+                          score.rank === 2 ? 'text-gray-400' :
+                          score.rank === 3 ? 'text-orange-600' :
+                          'text-gray-300'
+                        }`} />
+                        <span className="text-2xl font-bold text-gray-900">
+                          #{score.rank}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {score.total_participants && `共${score.total_participants}人`}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>

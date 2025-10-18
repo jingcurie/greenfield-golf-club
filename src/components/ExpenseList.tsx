@@ -39,8 +39,20 @@ export default function ExpenseList() {
     const expenseDate = new Date(expense.expense_date)
     const matchesYear = !selectedYear || expenseDate.getFullYear().toString() === selectedYear
     const matchesMonth = !selectedMonth || (expenseDate.getMonth() + 1).toString() === selectedMonth
+    const matchesType = filterType === 'all' || expense.expense_type === filterType
     
-    return matchesSearch && matchesYear && matchesMonth
+    // 调试筛选逻辑
+    if (filterType !== 'all') {
+      console.log('筛选调试:', {
+        filterType,
+        expenseType: expense.expense_type,
+        matchesType,
+        expenseTitle: expense.title,
+        allMatches: matchesSearch && matchesYear && matchesMonth && matchesType
+      })
+    }
+    
+    return matchesSearch && matchesYear && matchesMonth && matchesType
   })
 
   // 获取可用年份
@@ -55,6 +67,13 @@ export default function ExpenseList() {
         .order('expense_date', { ascending: false })
 
       if (error) throw error
+      console.log('费用数据:', data)
+      if (data && data.length > 0) {
+        console.log('第一个费用记录:', data[0])
+        console.log('所有字段名:', Object.keys(data[0]))
+        console.log('费用类型字段:', data[0].type)
+        console.log('可能的类型字段:', data[0].category || data[0].expense_type || data[0].type)
+      }
       setExpenses(data || [])
     } catch (error) {
       console.error('获取费用记录失败:', error)
@@ -169,45 +188,16 @@ export default function ExpenseList() {
         availableYears={availableYears}
         placeholder="按费用名称或备注搜索..."
         showLocationFilter={false}
+        showExpenseTypeFilter={true}
+        selectedExpenseType={filterType}
+        onExpenseTypeChange={setFilterType}
         onClearFilters={() => {
           setSearchTerm('')
           setSelectedYear('')
           setSelectedMonth('')
+          setFilterType('all')
         }}
       />
-
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">筛选：</span>
-          </div>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          >
-            <option value="all">全部类型</option>
-            <option value="equipment">设备采购</option>
-            <option value="maintenance">场地维护</option>
-            <option value="activity">活动支出</option>
-            <option value="salary">人员工资</option>
-            <option value="other">其他费用</option>
-          </select>
-          <select
-            value={filterMonth}
-            onChange={(e) => setFilterMonth(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          >
-            <option value="all">全部月份</option>
-            {Array.from({ length: 12 }, (_, i) => (
-              <option key={i} value={i.toString()}>
-                {i + 1}月
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
 
       {Object.keys(expensesByType).length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">

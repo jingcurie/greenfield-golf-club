@@ -363,46 +363,65 @@ export default function UserScoreQuery() {
                           <div className="flex items-center">
                             <Clock className="w-4 h-4 mr-2 text-gray-400" />
                             <span>
-                              {new Date(group.event.start_time).toLocaleString('zh-CN', {
+                              {new Date(group.event.start_time).toLocaleDateString('zh-CN', {
                                 year: 'numeric',
                                 month: '2-digit',
-                                day: '2-digit',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })} - {new Date(group.event.end_time).toLocaleString('zh-CN', {
-                                year: 'numeric',
-                                month: '2-digit',
-                                day: '2-digit',
-                                hour: '2-digit',
-                                minute: '2-digit'
+                                day: '2-digit'
                               })}
                             </span>
                           </div>
                         </div>
 
-                        <div className="flex items-center text-sm text-gray-600">
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center">
-                              <span className="text-gray-500">参赛人数:</span>
-                              <span className="ml-2 font-medium">{group.scores.length}人</span>
-                            </div>
-                            {userScore && (
-                              <>
+                        {/* 移动端紧凑布局 */}
+                        <div className="block sm:hidden">
+                          <div className="flex items-center justify-between text-sm text-gray-600">
+                            <div className="flex items-center space-x-3">
+                              {userScore && (
                                 <div className="flex items-center">
-                                  <span className="text-gray-500">我的成绩:</span>
-                                  <span className="ml-2 font-medium">{userScore.total_strokes}杆</span>
+                                  <span className="font-medium text-golf-600">{userScore.total_strokes}杆</span>
+                                  {userScore.rank && (
+                                    <div className="flex items-center ml-2">
+                                      {getRankIcon(userScore.rank)}
+                                      <span className={`ml-1 px-2 py-1 rounded text-xs font-medium ${getRankBadgeStyle(userScore.rank)}`}>
+                                        #{userScore.rank}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
-                                {userScore.rank && (
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <span className="text-gray-500">{group.scores.length}人参赛</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 桌面端完整布局 */}
+                        <div className="hidden sm:block">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <div className="flex items-center space-x-4">
+                              <div className="flex items-center">
+                                <span className="text-gray-500">参赛人数:</span>
+                                <span className="ml-2 font-medium">{group.scores.length}人</span>
+                              </div>
+                              {userScore && (
+                                <>
                                   <div className="flex items-center">
-                                    <span className="text-gray-500">我的排名:</span>
-                                    <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${getRankBadgeStyle(userScore.rank)}`}>
-                                      #{userScore.rank}
-                                    </span>
-                                    {getRankIcon(userScore.rank)}
+                                    <span className="text-gray-500">我的成绩:</span>
+                                    <span className="ml-2 font-medium">{userScore.total_strokes}杆</span>
                                   </div>
-                                )}
-                              </>
-                            )}
+                                  {userScore.rank && (
+                                    <div className="flex items-center">
+                                      <span className="text-gray-500">我的排名:</span>
+                                      <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${getRankBadgeStyle(userScore.rank)}`}>
+                                        #{userScore.rank}
+                                      </span>
+                                      {getRankIcon(userScore.rank)}
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
