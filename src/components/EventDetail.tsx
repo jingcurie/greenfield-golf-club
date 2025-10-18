@@ -27,6 +27,8 @@ export default function EventDetail({ event, onClose, user, userProfile }: Event
   const [articleContent, setArticleContent] = useState(event.article_content || '')
   const [articleExcerpt, setArticleExcerpt] = useState(event.article_excerpt || '')
   const [savingArticle, setSavingArticle] = useState(false)
+  const [isArticlePublished, setIsArticlePublished] = useState(event.article_published || false)
+  const [articlePublishedAt, setArticlePublishedAt] = useState(event.article_published_at || '')
   const { confirmAction, showError } = useModal()
 
   useEffect(() => {
@@ -87,8 +89,12 @@ export default function EventDetail({ event, onClose, user, userProfile }: Event
         throw error
       }
 
-      console.log('文章保存成功')
+      // 更新本地状态以实时反映更改
+      setArticleContent(articleContent)
+      setArticleExcerpt(articleExcerpt)
       setIsEditingArticle(false)
+      
+      console.log('文章保存成功')
       showError('文章保存成功！')
     } catch (error) {
       console.error('保存文章失败:', error)
@@ -126,8 +132,14 @@ export default function EventDetail({ event, onClose, user, userProfile }: Event
         throw error
       }
 
-      console.log('文章发布成功')
+      // 更新本地状态以实时反映更改
+      setArticleContent(articleContent)
+      setArticleExcerpt(articleExcerpt)
+      setIsArticlePublished(true)
+      setArticlePublishedAt(new Date().toISOString())
       setIsEditingArticle(false)
+      
+      console.log('文章发布成功')
       showError('文章发布成功！')
     } catch (error) {
       console.error('发布文章失败:', error)
@@ -409,13 +421,13 @@ export default function EventDetail({ event, onClose, user, userProfile }: Event
                     </div>
                   ) : (
                     <div className="bg-gray-50 rounded-lg p-6">
-                      {event.article_content ? (
+                      {articleContent ? (
                         <div>
-                          <TinyMCEViewer content={event.article_content} />
-                          {event.article_published && (
+                          <TinyMCEViewer content={articleContent} />
+                          {isArticlePublished && (
                             <div className="mt-4 text-sm text-green-600 flex items-center">
                               <CheckCircle className="w-4 h-4 mr-2" />
-                              已发布 - {new Date(event.article_published_at || '').toLocaleDateString('zh-CN')}
+                              已发布 - {new Date(articlePublishedAt).toLocaleDateString('zh-CN')}
                             </div>
                           )}
                         </div>
